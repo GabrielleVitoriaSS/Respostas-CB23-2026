@@ -36,7 +36,14 @@ LINHA: re.Pattern = None  # type: ignore[assignment]  # TODO issue #1
 (?P<hora>\d{2}\:\d{2}\:\d{2})
 (?P<nivel>INFO|WARN|ALARME)
 (?P<tag>[A-Z]{1,2}\d{1,3}) 
-(?P<resto>[^\s].+) Selecionaria também os outros grupos equivocadamente
+(?P<resto>[^\s].*) 
+re.compile(r"\s*
+            (?P<data>\d{4}\-\d{2}\-\d{2})\s+ 
+            (?P<hora>\d{2}\:\d{2}\:\d{2})\s+ 
+            (?P<nivel>INFO|WARN|ALARME)\s+ 
+            (?P<tag>[A-Z]{1,2}\d{1,3})\s+ 
+            (?P<resto>[^\s].*) 
+            ", re.VERBOSE)
 '''
 
 
