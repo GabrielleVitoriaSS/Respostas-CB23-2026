@@ -31,6 +31,14 @@ from fornecido.cronometro import cronometrar
 #: aplicado com `LINHA.fullmatch(linha)`.
 LINHA: re.Pattern = None  # type: ignore[assignment]  # TODO issue #1
 
+'''
+(?P<data>\d{4}\-\d{2}\-\d{2}) 
+(?P<hora>\d{2}\:\d{2}\:\d{2})
+(?P<nivel>INFO|WARN|ALARME)
+(?P<tag>[A-Z]{1,2}\d{1,3}) 
+(?P<resto>[^\s].+) Selecionaria também os outros grupos equivocadamente
+'''
+
 
 @dataclass(frozen=True)
 class Registro:
