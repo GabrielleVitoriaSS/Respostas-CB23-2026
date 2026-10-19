@@ -6,6 +6,7 @@ dizendo qual caso ele cobre, e floats comparados com assertAlmostEqual ou np.all
 import unittest
 
 from elevatoria.dados import por_tag
+from elevatoria.serie import SerieTemporal
 
 
 class TestPorTagExemplo(unittest.TestCase):
@@ -19,6 +20,13 @@ class TestPorTagExemplo(unittest.TestCase):
 # Acrescente abaixo as suas classes de teste, começando pelos testes de regressão da
 # issue #4 (escreva-os ANTES de corrigir o defeito e confirme que falham).
 
+# Monitoria de 19 de outubro
+class TesteMovelTam(unittest.TestCase):
+    def test_tamanho_janela(self):
+        serie = SerieTemporal.de_lista([i for i in range(1000)])
+        valores_janela = [1, 50, 200, 500]
+        for jan in valores_janela:
+            self.assertEqual(serie.media_movel(janela = jan), len(serie) - jan + 1)
 
 if __name__ == "__main__":
     unittest.main()
