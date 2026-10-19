@@ -88,18 +88,19 @@ def ler_log(texto: str) -> tuple[list[Registro], list[str]]:
         if linha == "":
             continue
 
-        re.match = LINHA.fullmatch(linha)
+        linha_match = LINHA.fullmatch(linha)
 
-        if re.match is None:
+        if linha_match is None:
             invalidas.append(linha)
             continue
 
-        dados = re.match.groupdict()
-
-        instante = None
+        dados = linha_match.groupdict()
 
         try:
-            instante = datetime.strptime(f"{dados['data']} {dados['hora']}", "%Y-%m-%d %H:%M:%S")
+            instante = datetime.strptime(
+                f"{dados['data']} {dados['hora']}", 
+                "%Y-%m-%d %H:%M:%S"
+                )
         except ValueError:
             invalidas.append(linha)
             continue
