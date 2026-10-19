@@ -29,23 +29,15 @@ from fornecido.cronometro import cronometrar
 #: dígitos) e `resto` (o restante da linha, começando por um caractere que não é espaço).
 #: As partes são separadas por um ou mais espaços. A linha inteira deve casar: o padrão é
 #: aplicado com `LINHA.fullmatch(linha)`.
-LINHA: re.Pattern = None  # type: ignore[assignment]  # TODO issue #1
 
-'''
-(?P<data>\d{4}\-\d{2}\-\d{2}) 
-(?P<hora>\d{2}\:\d{2}\:\d{2})
-(?P<nivel>INFO|WARN|ALARME)
-(?P<tag>[A-Z]{1,2}\d{1,3}) 
-(?P<resto>[^\s].*) 
-re.compile(r"\s*
-            (?P<data>\d{4}\-\d{2}\-\d{2})\s+ 
-            (?P<hora>\d{2}\:\d{2}\:\d{2})\s+ 
-            (?P<nivel>INFO|WARN|ALARME)\s+ 
-            (?P<tag>[A-Z]{1,2}\d{1,3})\s+ 
-            (?P<resto>[^\s].*) 
-            ", re.VERBOSE)
-'''
-
+LINHA: re.Pattern = re.compile(r"""\s* # Captura espaços iniciais, se existirem
+            (?P<data>\d{4}\-\d{2}\-\d{2})\s+ # Grupo data no formato AAAA-MM-DD, seguido de um ou mais espaços
+            (?P<hora>\d{2}\:\d{2}\:\d{2})\s+ # Grupo hora no formato HH:MM:SS, seguido de um ou mais espaços
+            (?P<nivel>INFO|WARN|ALARME)\s+ # Grupo nível: INFO, WARN ou ALARME, seguido de um ou mais espaços
+            (?P<tag>[A-Z]{1,2}\d{1,3})\s+ # Grupo tag: 1 ou 2 letras maiúsculas seguidas de 1 a 3 dígitos, seguido de um ou mais espaços
+            (?P<resto>[^\s].*) # Grupo resto: o restante da linha, começando por um caractere que não é espaço
+            \s*$ # Captura espaços finais, se existirem
+            """, re.VERBOSE)
 
 @dataclass(frozen=True)
 class Registro:
@@ -63,8 +55,10 @@ def valida_tag(s: str) -> bool:
     Use `fullmatch`. Válidas: `"PT101"`, `"FT201"`, `"B1"`. Inválidas: `"pt101"`, `"PT"`,
     `"PT1010"`, `"101PT"` e `"PT101 "` (sobra de caracteres).
     """
-    raise NotImplementedError("issue #1: valida_tag")
-
+    # Monitoria 19 de outubro
+    if re.fullmatch(r"[A-Z]{1,2}\d{1,3}", s):
+        return True
+    return False
 
 def ler_log(texto: str) -> tuple[list[Registro], list[str]]:
     """Lê o texto do log e devolve `(registros, invalidas)`.
@@ -84,7 +78,51 @@ def ler_log(texto: str) -> tuple[list[Registro], list[str]]:
       (`contagens=1623` vira `1623.0`; `evento=partida` continua `"partida"`);
     - texto vazio devolve `([], [])`.
     """
-    raise NotImplementedError("issue #1: ler_log")
+
+    # Monitoria 19 de outubro
+
+    registros = []
+    invalidas = []
+    for linha in texto.splitlines():
+        linha = linha.strip()
+        if linha == "":
+            continue
+
+        re.match = LINHA.fullmatch(linha)
+
+        if re.match is None:
+            invalidas.append(linha)
+            continue
+
+        dados = re.match.groupdict()
+
+        instante = None
+
+        try:
+            instante = datetime.strptime(f"{dados['data']} {dados['hora']}", "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            invalidas.append(linha)
+            continue
+
+        dict_valores = re.findall(r"(\w+)=(\S+)", dados['resto']) # Aqui é linha ou dados['resto']?
+        valores = {}
+
+        for chave, valor in dict_valores:
+            try:
+                val = float(valor)
+            except ValueError:
+                val = valor
+            valores[chave] = val
+
+        registros.append(
+            Registro(
+                instante = instante,
+                nivel = dados['nivel'],
+                tag = dados['tag'],
+                valores = valores
+            )
+        )
+    return registros, invalidas
 
 
 def por_tag(registros: list[Registro], tag: str) -> list[Registro]:
@@ -93,12 +131,20 @@ def por_tag(registros: list[Registro], tag: str) -> list[Registro]:
 
 
 def contagem_por_tag(registros: list[Registro]) -> dict[str, int]:
-    """Dicionário tag -> número de registros.
 
-    Use uma compreensão de dicionário sobre o conjunto das tags, obtido por uma compreensão
-    de conjunto. Lista vazia devolve `{}`.
-    """
-    raise NotImplementedError("issue #1: contagem_por_tag")
+    # Monitoria 19 de outubro
+    
+    conjunto_tags = {r.tag for r in registros}
+    dict_tag = {t: sum([r.tag == t for r in registros]) for t in conjunto_tags}
+    
+    ''' 
+    dict_tag = {}
+    for r in registros:
+        dict_tag.setdefault(r.tag, 0)
+        dict_tag[r.tag] += 1
+    '''
+
+    return dict_tag
 
 
 def serie(registros: list[Registro], tag: str, chave: str) -> SerieTemporal:
@@ -107,8 +153,16 @@ def serie(registros: list[Registro], tag: str, chave: str) -> SerieTemporal:
     Os registros da tag sem essa chave (por exemplo, os alarmes de PT102, que não têm
     `contagens`) são ignorados. Crie a série com `SerieTemporal.de_lista`.
     """
-    raise NotImplementedError("issue #1: serie")
 
+    # Monitoria 19 de outubro
+    valores = []
+    for r in registros:
+        if r.tag == tag and chave in r.valores:
+            valores.append(r.valores[chave])
+
+    # val = [r.valores[chave] for r in registros if r.tag == tag and chave in r.valores]
+    # Levantar ValueError se for string? ou deixar vazio? 
+    return SerieTemporal.de_lista()
 
 # ---------------------------------------------------------------------------------------
 # Issue #2: conversores por tag
@@ -119,7 +173,14 @@ def criar_conversores(escalas: dict[str, float]) -> dict[str, Callable[[float], 
     Cada `f` é uma lambda. Cuidado com o *late binding*: cada função deve usar o fator da
     sua tag, e não o último fator do dicionário (veja a issue #2 no enunciado).
     """
-    raise NotImplementedError("issue #2: criar_conversores")
+    # Monitoria 19 de outubro
+    dict_functions = {}
+    for chave, valor in escalas:
+        dict_functions[chave] = lambda x, c=valor: c * x # c * x ou escalas[c] * x tirando chave do loop?
+            # Resolve?
+    return dict_functions
+
+
 
 
 # ---------------------------------------------------------------------------------------
