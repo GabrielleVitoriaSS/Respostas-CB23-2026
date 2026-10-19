@@ -44,7 +44,14 @@ def etapa1(texto: str, verdade: dict) -> list:
     assert contagem_por_tag(registros) == verdade["registros_por_tag"]
 
     # (b) Conte os registros por nível com uma compreensão de dicionário.
-    por_nivel = _todo("1(b)")
+
+    # Consertar fazendo com compreensão de dicionário
+    # Monitoria de 19 de outubro
+    por_nivel = {}
+    for r in registros:
+        por_nivel.setdefault(r.nivel, 0)
+        por_nivel[r.nivel] += 1
+
     assert por_nivel == verdade["por_nivel"]
 
     # (c) Some os pulsos de FT201 (com `serie`) e imprima o volume bombeado na hora (0,1 L/pulso).

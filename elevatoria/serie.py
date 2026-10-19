@@ -64,5 +64,7 @@ class SerieTemporal(np.ndarray):
         completam um bloco são descartados. Usa `reshape`, sem laços. Levanta `ValueError`
         se `k < 1` ou `k > len(self)`.
         """
+        if k < 1 or k > len(self):
+            raise ValueError("1 <= k <= len(self)")
         arr = self[:(len(self) // k) * k].reshape(-1, k) 
         return arr.mean(axis=1).view(SerieTemporal)
