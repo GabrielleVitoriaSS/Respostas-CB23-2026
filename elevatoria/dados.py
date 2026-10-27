@@ -29,22 +29,14 @@ from fornecido.cronometro import cronometrar
 #: dígitos) e `resto` (o restante da linha, começando por um caractere que não é espaço).
 #: As partes são separadas por um ou mais espaços. A linha inteira deve casar: o padrão é
 #: aplicado com `LINHA.fullmatch(linha)`.
-LINHA: re.Pattern = None  # type: ignore[assignment]  # TODO issue #1
-
-'''
-(?P<data>\d{4}\-\d{2}\-\d{2}) 
-(?P<hora>\d{2}\:\d{2}\:\d{2})
-(?P<nivel>INFO|WARN|ALARME)
-(?P<tag>[A-Z]{1,2}\d{1,3}) 
-(?P<resto>[^\s].*) 
-re.compile(r"\s*
-            (?P<data>\d{4}\-\d{2}\-\d{2})\s+ 
-            (?P<hora>\d{2}\:\d{2}\:\d{2})\s+ 
-            (?P<nivel>INFO|WARN|ALARME)\s+ 
-            (?P<tag>[A-Z]{1,2}\d{1,3})\s+ 
-            (?P<resto>[^\s].*) 
-            ", re.VERBOSE)
-'''
+LINHA: re.Pattern = re.compile(r"""^        # inicio da linha
+            (?P<data>\d{4}-\d{2}-\d{2})\s+  # Grupo data no formato AAAA-MM-DD, seguido de um ou mais espaços
+            (?P<hora>\d{2}:\d{2}:\d{2})\s+  # Grupo hora no formato HH:MM:SS, seguido de um ou mais espaços
+            (?P<nivel>INFO|WARN|ALARME)\s+  # Grupo nível, que pode ser INFO, WARN ou ALARME, seguido de um ou mais espaços
+            (?P<tag>[A-Z]{1,2}\d{1,3})\s+   # Grupo tag, que tem de 1-2 letras maíusculas seguidas por 1-3 dígitos, seguido de um ou mais espaços
+            (?P<resto>[^\s].*)              # Grupo resto, que busca qualquer coisa que não seja espaço branco ou tabulação seguido de qualquer coisa
+            $                               # fim da linha
+            """, re.VERBOSE)
 
 
 @dataclass(frozen=True)
