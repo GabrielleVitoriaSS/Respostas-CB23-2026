@@ -58,7 +58,8 @@ def valida_tag(s: str) -> bool:
     tag_val = r"[A-Z]{1,2}\d{1,3}"
     if re.fullmatch(tag_val, s):
         return True
-
+    else: 
+        return False
 def ler_log(texto: str) -> tuple[list[Registro], list[str]]:
     """Lê o texto do log e devolve `(registros, invalidas)`.
 
@@ -77,7 +78,55 @@ def ler_log(texto: str) -> tuple[list[Registro], list[str]]:
       (`contagens=1623` vira `1623.0`; `evento=partida` continua `"partida"`);
     - texto vazio devolve `([], [])`.
     """
-    raise NotImplementedError("issue #1: ler_log")
+    
+    registros = []
+    invalidas = []
+
+    for linha in texto.splitlines():
+        if re.fullmatch(r"\s*", linha):
+            continue
+        linha_tex = LINHA.fullmatch(linha)
+        if linha_tex is None:
+            invalidas.append(linha)
+            continue
+
+        grupos = linha_tex.groupdict()
+
+        try:
+            data_tex = grupos["data"]
+            hora_tex = grupos["hora"]
+            instante = datetime.strptime(
+                f"{data_tex} {hora_tex}", 
+                    "%Y-%m-%d %H:%M:%S"
+                )
+
+        except ValueError:
+            invalidas.append(linha)
+            continue
+
+        par = re.findall(r"(\w+)=(\S+)", grupos['resto'])
+        valores = {}
+
+        if par == []:
+            invalidas.append(linha)
+            continue
+
+        for chave, valor in par:
+            try:
+                valor_convertido = float(valor)
+            except ValueError:
+                valor_convertido = valor
+            valores[chave] = valor_convertido
+
+        registros.append(
+            Registro(
+                instante = instante,
+                nivel = grupos['nivel'],
+                tag = grupos['tag'],
+                valores = valores
+            )
+        )
+    return registros, invalidas
 
 
 def por_tag(registros: list[Registro], tag: str) -> list[Registro]:
